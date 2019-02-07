@@ -3,7 +3,7 @@
 """
 Created on Tue Jan 29 15:51:52 2019
 
-@author: mitchnodzak
+@author: cmlnodzak
 """
 from math import floor, log10, fabs
 from pybedtools import BedTool
@@ -56,12 +56,12 @@ def gtfReader(gtf, feat, group = None, chrom = None):
     output:
     ==========================================================================
         Returns a Pandas DataFrame with column names listed below.
-        column names = ['seqname', 'source', 'feature', 'start', 'end', 
+        column names = ['seqname', 'start', 'end', 
                             'score', 'strand', 'frame', 'gene_id', 
                             'gene_type', 'gene_name', 'gene_status']
     ==========================================================================
     '''
-    anno_df = BedTool(gtf).to_dataframe()
+    anno_df = BedTool(gtf).to_dataframe(skiprows=5)
     anno_df = anno_df[anno_df.feature == feat]
     anno_df = _attributeExtractor(anno_df)
     if group == 'lncRNA':
@@ -71,7 +71,7 @@ def gtfReader(gtf, feat, group = None, chrom = None):
         anno_df = anno_df[anno_df.gene_type == group].reset_index(drop=True)
     if chrom != None:
         anno_df[anno_df.seqname == chrom].reset_index(drop=True)
-    return anno_df
+    return anno_df.drop(['source', 'feature'],axis=1)
 
 
 
