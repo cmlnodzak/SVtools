@@ -7,6 +7,7 @@ Created on Tue Jan 29 15:51:52 2019
 """
 from math import floor, log10, fabs
 from pybedtools import BedTool
+import pandas as pd
 import re
 
 
@@ -74,4 +75,47 @@ def gtfReader(gtf, feat, group = None, chrom = None):
     return anno_df.drop(['source', 'feature'],axis=1)
 
 
+class VCFparser:
+    col_names =  ['#chrom', 'start', 'stop', 'REF', 'ALT', 'QUAL', 'FILT', 'sample', 'GT']
+    hgsv_list = ['HG00512','HG00513','HG00514', 'HG00731', 'HG00732', 'HG00733', 'NA19238', 'NA19239', 'NA19240']
+
+    def __init__(self,infile, outfy):
+        self.bedtoolsList = []
+        with open(infile) as SVs, open(outfy,'w') as outfile:
+                data = []
+                for line in SVs.readlines():
+                        if line.startswith('#'):
+                                continue
+                        else:
+                                line = line.rstrip().split('\t')
+                                end = line[7].split(';')[1].split('=')[1]
+                                line.pop(2)
+                                line.insert(2,end)
+                                info = line[7].split(';')[7].split(',')
+                                for genos in info:
+                                        geno = genos.split(':')
+                                        sampid = str(geno[4])
+                                        genotype = str(geno[3])
+                                        SVdata=line[0:7]
+                                        SVdata.append(sampid)
+                                        SVdata.append(genotype)
+                                        data.append(SVdata)
+                                        keep="\t".join(SVdata)
+                                        outfile.write(keep+'\n')                  
+                self.frame = pd.DataFrame.from_records(data)
+                self.frame.columns = self.col_names
+        self.bedtoolsList = self._Frame2Bed(self.frame,self.hgsv_list)
+   
+     
+#pass in a list of sample names as they are written in the file
+    def _Frame2Bed(self,df,samples):
+        bedList = []
+        # extract heterozygous deletions and insertions, group by samples.
+        df = df.loc[df['GT'] == '0/1']
+        df = df.groupby('sample')
+        for i in samples:
+            i = df.get_group(i).drop_duplicates()
+            i_bt = BedTool.from_dataframe(i)
+            bedList.append(i_bt)
+        return bedList
 
