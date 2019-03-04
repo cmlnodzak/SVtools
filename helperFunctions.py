@@ -79,7 +79,8 @@ class VCFparser:
     col_names =  ['#chrom', 'start', 'stop', 'REF', 'ALT', 'QUAL', 'FILT', 'sample', 'GT']
     hgsv_list = ['HG00512','HG00513','HG00514', 'HG00731', 'HG00732', 'HG00733', 'NA19238', 'NA19239', 'NA19240']
 
-    def __init__(self,infile, outfy):
+    def __init__(self,infile, outfy, genoFilt=None):
+        self.genoFilt=genoFilt
         self.bedtoolsList = []
         with open(infile) as SVs, open(outfy,'w') as outfile:
                 data = []
@@ -104,14 +105,15 @@ class VCFparser:
                                         outfile.write(keep+'\n')                  
                 self.frame = pd.DataFrame.from_records(data)
                 self.frame.columns = self.col_names
-        self.bedtoolsList = self._Frame2Bed(self.frame,self.hgsv_list)
+        self.bedtoolsList = self._Frame2Bed(self.frame,self.hgsv_list,self.genoFilt)
    
      
 #pass in a list of sample names as they are written in the file
-    def _Frame2Bed(self,df,samples):
+    def _Frame2Bed(self,df,samples,genoFilt):
         bedList = []
+        if self.genoFilt == "heterozygous":
         # extract heterozygous deletions and insertions, group by samples.
-        df = df.loc[df['GT'] == '0/1']
+            df = df.loc[df['GT'] == '0/1']
         df = df.groupby('sample')
         for i in samples:
             i = df.get_group(i).drop_duplicates()
