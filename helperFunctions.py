@@ -121,3 +121,25 @@ class VCFparser:
             bedList.append(i_bt)
         return bedList
 
+def log2copyNum(num):
+    '''
+    log2copyNum: a function to define the absolute copy number 
+    taken from log2 ratio data for a diploid organism.
+    ==========================================================
+    parameters:
+        a log2 ratio value for a given genomic locus: a float.
+    ==========================================================
+    attributes:
+        the absolute copy number for a given genomic locus, 
+        rounded to two decimal places: a float.
+            2 for diploid 'normal'
+            < 2 for loss
+            > 2 for gain
+    '''
+    
+    return round((2**num)*2,2)
+
+
+
+
+
